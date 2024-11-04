@@ -10,7 +10,7 @@ import com.ideahub.backend.utils.TokenGenerator;
 import com.ideahub.backend.repository.UserProfileRepository;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -27,38 +27,33 @@ public class UserService {
     }
 
     public User registerUser(String googleId, String email, String provider) {
-        // Check if the user already exists based on Google ID
         User existingUser = userRepository.findByGoogleId(googleId);
         if (existingUser != null) {
             return existingUser;
         }
 
-        // Generate a unique username
         String username = usernameGenerator.generateUniqueUsername();
 
-        // Create and save a new user instance
         User newUser = new User();
         newUser.setGoogleId(googleId);
         newUser.setEmail(email);
         newUser.setProvider(provider);
         newUser.setUsername(username);
 
-        // Save the user and return the saved instance, which will have the ID set
         User savedUser = userRepository.save(newUser);
 
-        // Create a UserProfile if it does not already exist
         if (!userProfileRepository.existsById(savedUser.getId())) {
             UserProfile newUserProfile = new UserProfile(
                     savedUser.getId(),
                     savedUser.getUsername(),
-                    Collections.emptyList(), // Properly initializes posts as an empty list
-                    Collections.emptyList(), // Properly initializes comments as an empty list
-                    Collections.emptyList(), // Properly initializes upvotedPosts as an empty list
-                    Collections.emptyList(), // Properly initializes downvotedPosts as an empty list
-                    0,                        // Initial aggregate score
-                    0,                        // Initial number of posts
-                    0,                        // Initial number of comments
-                    0                         // Initial upvotes received
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    Collections.emptyList(),
+                    0,
+                    0,
+                    0,
+                    0
             );
             userProfileRepository.save(newUserProfile);
         }
@@ -68,5 +63,11 @@ public class UserService {
 
     public String generateUserToken(User user) {
         return TokenGenerator.generateToken(user.getId());
+    }
+
+    // New method to retrieve username by userId
+    public String getUsernameById(String userId) {
+        Optional<User> user = userRepository.findById(userId);
+        return user.map(User::getUsername).orElse("Unknown User");
     }
 }

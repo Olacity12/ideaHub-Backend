@@ -65,10 +65,4 @@ public class PostController {
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
-    // Endpoint to remove a comment ID from a post
-    @DeleteMapping("/{postId}/comments/{commentId}")
-    public ResponseEntity<Void> removeCommentFromPost(@PathVariable String postId, @PathVariable String commentId) {
-        postService.removeCommentIdFromPost(postId, commentId);
-        return new ResponseEntity<>(HttpStatus.OK);
-    }
 }
