@@ -13,10 +13,12 @@ import java.util.Optional;
 public class PostService {
 
     private final PostRepository postRepository;
+    private final UserProfileService userProfileService;
 
     @Autowired
-    public PostService(PostRepository postRepository) {
+    public PostService(PostRepository postRepository, UserProfileService userProfileService) {
         this.postRepository = postRepository;
+        this.userProfileService = userProfileService;
     }
 
     public Post createPost(Post post) {
@@ -25,13 +27,18 @@ public class PostService {
         post.setUpvotes(0);
         post.setDownvotes(0);
         post.setTopContributors(List.of());
-        post.setCommentIds(List.of()); // Initialize as empty list for new posts
+        post.setCommentIds(List.of());
 
         if (post.getIsTechnicalOpen() == null) {
-            post.setIsTechnicalOpen(true); // Default to true if not specified
+            post.setIsTechnicalOpen(true);
         }
 
-        return postRepository.save(post);
+        Post savedPost = postRepository.save(post);
+
+        // Update the user's profile with the new post ID
+        userProfileService.addPostToUserProfile(post.getUserId(), savedPost.getId());
+
+        return savedPost;
     }
 
     public Optional<Post> getPostById(String postId) {
