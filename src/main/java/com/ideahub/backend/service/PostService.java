@@ -2,8 +2,10 @@ package com.ideahub.backend.service;
 
 import com.ideahub.backend.model.Comment;
 import com.ideahub.backend.model.Post;
+import com.ideahub.backend.model.UserProfile;
 import com.ideahub.backend.repository.CommentRepository;
 import com.ideahub.backend.repository.PostRepository;
+import com.ideahub.backend.repository.UserProfileRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -18,12 +20,14 @@ public class PostService {
     private final PostRepository postRepository;
     private final CommentRepository commentRepository;
     private final UserProfileService userProfileService;
+    private final UserProfileRepository userProfileRepository ;
 
     @Autowired
-    public PostService(PostRepository postRepository, CommentRepository commentRepository, UserProfileService userProfileService) {
+    public PostService(PostRepository postRepository, CommentRepository commentRepository, UserProfileService userProfileService, UserProfileRepository userProfileRepository) {
         this.postRepository = postRepository;
         this.commentRepository = commentRepository;
         this.userProfileService = userProfileService;
+        this.userProfileRepository = userProfileRepository;
     }
 
     public Post createPost(Post post) {
@@ -109,5 +113,100 @@ public class PostService {
             post.setUpdatedAt(LocalDateTime.now());
             postRepository.save(post);
         });
+    }
+
+    // Method to get all posts with the user's vote status
+    public List<PostWithVoteStatus> getAllPostsWithUserVoteStatus(String userId) {
+        // Retrieve all posts
+        List<Post> posts = postRepository.findAll();
+
+        // Retrieve the user's profile
+        UserProfile userProfile = userProfileRepository.findById(userId).orElse(null);
+
+        // Map posts to include the user's vote status
+        return posts.stream().map(post -> {
+            String voteStatus = null;
+            if (userProfile != null) {
+                voteStatus = userProfile.getVotes().get(post.getId()); // "upvote", "downvote", or null
+            }
+            return new PostWithVoteStatus(post, voteStatus);
+        }).collect(Collectors.toList());
+    }
+
+    // Inner class to include vote status in the response
+    public static class PostWithVoteStatus {
+        private final Post post;
+        private final String voteStatus;
+
+        public PostWithVoteStatus(Post post, String voteStatus) {
+            this.post = post;
+            this.voteStatus = voteStatus;
+        }
+
+        public Post getPost() {
+            return post;
+        }
+
+        public String getVoteStatus() {
+            return voteStatus;
+        }
+    }
+
+    // Method to handle upvoting a post
+    public void upvotePost(String userId, String postId) {
+        Optional<UserProfile> userProfileOpt = userProfileRepository.findById(userId);
+        Optional<Post> postOpt = postRepository.findById(postId);
+
+        if (userProfileOpt.isPresent() && postOpt.isPresent()) {
+            UserProfile userProfile = userProfileOpt.get();
+            Post post = postOpt.get();
+
+            // Check the user's existing vote for this post
+            String existingVote = userProfile.getVotes().get(postId);
+
+            if (!"upvote".equals(existingVote)) {
+                // If the user had downvoted before, remove the downvote
+                if ("downvote".equals(existingVote)) {
+                    post.setDownvotes(post.getDownvotes() - 1);
+                }
+
+                // Add the upvote
+                post.setUpvotes(post.getUpvotes() + 1);
+                userProfile.getVotes().put(postId, "upvote");
+
+                // Save the changes
+                userProfileRepository.save(userProfile);
+                postRepository.save(post);
+            }
+        }
+    }
+
+    // Method to handle downvoting a post
+    public void downvotePost(String userId, String postId) {
+        Optional<UserProfile> userProfileOpt = userProfileRepository.findById(userId);
+        Optional<Post> postOpt = postRepository.findById(postId);
+
+        if (userProfileOpt.isPresent() && postOpt.isPresent()) {
+            UserProfile userProfile = userProfileOpt.get();
+            Post post = postOpt.get();
+
+            // Check the user's existing vote for this post
+            String existingVote = userProfile.getVotes().get(postId);
+
+            if (!"downvote".equals(existingVote)) {
+                // If the user had upvoted before, remove the upvote
+                if ("upvote".equals(existingVote)) {
+                    post.setUpvotes(post.getUpvotes() - 1);
+                }
+
+                // Add the downvote
+                post.setDownvotes(post.getDownvotes() + 1);
+                userProfile.getVotes().put(postId, "downvote");
+
+                // Save the changes
+                userProfileRepository.save(userProfile);
+                postRepository.save(post);
+            }
+        }
     }
 }

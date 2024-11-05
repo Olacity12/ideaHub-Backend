@@ -36,13 +36,6 @@ public class PostController {
                 .orElseGet(() -> new ResponseEntity<>(HttpStatus.NOT_FOUND));
     }
 
-    // Endpoint to get all posts
-    @GetMapping
-    public ResponseEntity<List<Post>> getAllPosts() {
-        List<Post> posts = postService.getAllPosts();
-        return new ResponseEntity<>(posts, HttpStatus.OK);
-    }
-
     // Endpoint to update a post (excluding userId and username)
     @PutMapping("/{postId}")
     public ResponseEntity<Post> updatePost(@PathVariable String postId, @RequestBody Post updatedPost) {
@@ -63,6 +56,27 @@ public class PostController {
     public ResponseEntity<Void> addCommentToPost(@PathVariable String postId, @PathVariable String commentId) {
         postService.addCommentIdToPost(postId, commentId);
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // Endpoint to upvote a post
+    @PostMapping("/{postId}/upvote")
+    public ResponseEntity<Void> upvotePost(@PathVariable String postId, @RequestParam String userId) {
+        postService.upvotePost(userId, postId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // Endpoint to downvote a post
+    @PostMapping("/{postId}/downvote")
+    public ResponseEntity<Void> downvotePost(@PathVariable String postId, @RequestParam String userId) {
+        postService.downvotePost(userId, postId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // Endpoint to get all posts with the user's vote status
+    @GetMapping
+    public ResponseEntity<List<PostService.PostWithVoteStatus>> getAllPosts(@RequestParam String userId) {
+        List<PostService.PostWithVoteStatus> posts = postService.getAllPostsWithUserVoteStatus(userId);
+        return new ResponseEntity<>(posts, HttpStatus.OK);
     }
 
 }

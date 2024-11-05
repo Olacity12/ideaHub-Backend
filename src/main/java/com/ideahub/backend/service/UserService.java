@@ -46,14 +46,13 @@ public class UserService {
             UserProfile newUserProfile = new UserProfile(
                     savedUser.getId(),
                     savedUser.getUsername(),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    Collections.emptyList(),
-                    0,
-                    0,
-                    0,
-                    0
+                    Collections.emptyList(), // List<String> for posts
+                    Collections.emptyList(), // List<String> for comments
+                    Collections.emptyMap(),  // Map<String, String> for votes
+                    0,                       // aggregateScore
+                    0,                       // numberOfPosts
+                    0,                       // numberOfComments
+                    0                        // upvotesReceived
             );
             userProfileRepository.save(newUserProfile);
         }
