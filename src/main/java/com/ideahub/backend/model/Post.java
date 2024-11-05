@@ -13,7 +13,7 @@ public class Post {
     @Id
     private String id;
     private String userId;          // ID of the post creator
-    private String username;         // Username of the post creator
+    private String username;        // Username of the post creator
     private String title;
     private String content;
     private LocalDateTime createdAt;
@@ -23,6 +23,9 @@ public class Post {
     private Boolean isTechnicalOpen; // Allows null values for default setting
     private List<Contributor> topContributors; // List of top contributors with userId and username
     private List<String> commentIds; // List of comment IDs for quick access to comment count
+
+    // New field to store full comment details
+    private List<Comment> comments;
 
     @Data
     public static class Contributor {

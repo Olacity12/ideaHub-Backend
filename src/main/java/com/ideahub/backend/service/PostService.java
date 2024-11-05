@@ -1,6 +1,8 @@
 package com.ideahub.backend.service;
 
+import com.ideahub.backend.model.Comment;
 import com.ideahub.backend.model.Post;
+import com.ideahub.backend.repository.CommentRepository;
 import com.ideahub.backend.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -8,16 +10,19 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class PostService {
 
     private final PostRepository postRepository;
+    private final CommentRepository commentRepository;
     private final UserProfileService userProfileService;
 
     @Autowired
-    public PostService(PostRepository postRepository, UserProfileService userProfileService) {
+    public PostService(PostRepository postRepository, CommentRepository commentRepository, UserProfileService userProfileService) {
         this.postRepository = postRepository;
+        this.commentRepository = commentRepository;
         this.userProfileService = userProfileService;
     }
 
@@ -42,7 +47,31 @@ public class PostService {
     }
 
     public Optional<Post> getPostById(String postId) {
-        return postRepository.findById(postId);
+        // Retrieve the post from the repository
+        Optional<Post> postOpt = postRepository.findById(postId);
+
+        if (postOpt.isPresent()) {
+            Post post = postOpt.get();
+
+            // Fetch the comments for the post
+            List<Comment> comments = post.getCommentIds().stream()
+                    .map(commentRepository::findById)
+                    .filter(Optional::isPresent)
+                    .map(Optional::get)
+                    .collect(Collectors.toList());
+
+            // Populate replies for each comment
+            for (Comment comment : comments) {
+                List<Comment> replies = commentRepository.findByParentCommentId(comment.getId());
+                comment.setReplies(replies);
+            }
+
+            // Set the populated comments to the post
+            post.setComments(comments);
+            return Optional.of(post);
+        }
+
+        return Optional.empty();
     }
 
     public List<Post> getAllPosts() {
