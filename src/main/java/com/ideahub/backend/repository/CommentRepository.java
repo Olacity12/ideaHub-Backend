@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface CommentRepository extends MongoRepository<Comment, String> {
 
-    List<Comment> findByPostIdAndParentCommentIdIsNull(String postId); // Fetch top-level comments for a post
+    List<Comment> findByPostId(String postId); // Fetch all comments for a post
 
     List<Comment> findByParentCommentId(String parentCommentId); // Fetch replies to a specific comment
 }

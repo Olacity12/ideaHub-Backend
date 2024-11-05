@@ -5,8 +5,7 @@ import com.ideahub.backend.repository.CommentRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class CommentService {
@@ -31,86 +30,81 @@ public class CommentService {
         // Save the comment to the database
         Comment savedComment = commentRepository.save(comment);
 
-        // If it's a top-level comment, add its ID to the post's comment list
+        // If it's a top-level comment, associate it with the post
         if (comment.getParentCommentId() == null) {
             postService.addCommentIdToPost(comment.getPostId(), savedComment.getId());
         }
 
-        // Update the user's profile to include the new comment ID
+        // Update the user's profile to include the new comment
         userProfileService.addCommentToUserProfile(comment.getUserId(), savedComment.getId());
 
         return savedComment;
     }
 
     public List<Comment> getCommentsForPost(String postId) {
-        // Retrieve top-level comments for the post
-        List<Comment> comments = commentRepository.findByPostIdAndParentCommentIdIsNull(postId);
+        // Fetch all comments for the given post in a single query
+        List<Comment> allComments = commentRepository.findByPostId(postId);
 
-        // Populate replies for each top-level comment
-        for (Comment comment : comments) {
-            List<Comment> replies = getRepliesForComment(comment.getId());
-            comment.setReplies(replies);
-        }
+        // Map for easy lookup of comments by ID
+        Map<String, Comment> commentMap = new HashMap<>();
+        List<Comment> topLevelComments = new ArrayList<>();
 
-        return comments;
+        // Populate the map and identify top-level comments
+        allComments.forEach(comment -> {
+            commentMap.put(comment.getId(), comment);
+            if (comment.getParentCommentId() == null) {
+                topLevelComments.add(comment);
+            }
+        });
+
+        // Organize replies under their respective parent comments
+        allComments.forEach(comment -> {
+            if (comment.getParentCommentId() != null) {
+                Comment parentComment = commentMap.get(comment.getParentCommentId());
+                if (parentComment != null) {
+                    parentComment.getReplies().add(comment);
+                }
+            }
+        });
+
+        return topLevelComments;
     }
 
     public List<Comment> getRepliesForComment(String commentId) {
-        // Retrieve replies for a specific comment
         return commentRepository.findByParentCommentId(commentId);
     }
 
     public void deleteComment(String commentId) {
-        // Delete the comment by ID
         commentRepository.deleteById(commentId);
     }
 
-
-    // Method to handle upvoting a comment
     public void upvoteComment(String userId, String commentId) {
-        Optional<Comment> commentOpt = commentRepository.findById(commentId);
-
-        if (commentOpt.isPresent()) {
-            Comment comment = commentOpt.get();
-
-            // Check if the user has already upvoted
+        commentRepository.findById(commentId).ifPresent(comment -> {
             if (!comment.getUpvotedUserIds().contains(userId)) {
-                // If the user had previously downvoted, remove the downvote
+                // Remove downvote if previously downvoted
                 if (comment.getDownvotedUserIds().remove(userId)) {
                     comment.setDownvotes(comment.getDownvotes() - 1);
                 }
-
-                // Add the upvote
+                // Add upvote
                 comment.getUpvotedUserIds().add(userId);
                 comment.setUpvotes(comment.getUpvotes() + 1);
-
-                // Save the updated comment
                 commentRepository.save(comment);
             }
-        }
+        });
     }
 
-    // Method to handle downvoting a comment
     public void downvoteComment(String userId, String commentId) {
-        Optional<Comment> commentOpt = commentRepository.findById(commentId);
-
-        if (commentOpt.isPresent()) {
-            Comment comment = commentOpt.get();
-
-            // Check if the user has already downvoted
+        commentRepository.findById(commentId).ifPresent(comment -> {
             if (!comment.getDownvotedUserIds().contains(userId)) {
-                // If the user had previously upvoted, remove the upvote
+                // Remove upvote if previously upvoted
                 if (comment.getUpvotedUserIds().remove(userId)) {
                     comment.setUpvotes(comment.getUpvotes() - 1);
                 }
-
-                // Add the downvote
+                // Add downvote
                 comment.getDownvotedUserIds().add(userId);
                 comment.setDownvotes(comment.getDownvotes() + 1);
-
-                // Save the updated comment
                 commentRepository.save(comment);
             }
-        }
+        });
     }
 }
