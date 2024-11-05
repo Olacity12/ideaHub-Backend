@@ -51,15 +51,15 @@ public class CommentController {
 
     // Endpoint to upvote a comment
     @PostMapping("/{commentId}/upvote")
-    public ResponseEntity<Void> upvoteComment(@PathVariable String commentId) {
-        commentService.upvoteComment(commentId);
+    public ResponseEntity<Void> upvoteComment(@PathVariable String commentId, @RequestParam String userId) {
+        commentService.upvoteComment(userId, commentId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     // Endpoint to downvote a comment
     @PostMapping("/{commentId}/downvote")
-    public ResponseEntity<Void> downvoteComment(@PathVariable String commentId) {
-        commentService.downvoteComment(commentId);
+    public ResponseEntity<Void> downvoteComment(@PathVariable String commentId, @RequestParam String userId) {
+        commentService.downvoteComment(userId, commentId);
         return new ResponseEntity<>(HttpStatus.OK);
     }
 }

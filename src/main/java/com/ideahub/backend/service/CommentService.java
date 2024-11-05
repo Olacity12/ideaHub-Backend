@@ -67,24 +67,50 @@ public class CommentService {
 
 
     // Method to handle upvoting a comment
-    public void upvoteComment(String commentId) {
+    public void upvoteComment(String userId, String commentId) {
         Optional<Comment> commentOpt = commentRepository.findById(commentId);
 
         if (commentOpt.isPresent()) {
             Comment comment = commentOpt.get();
-            comment.setUpvotes(comment.getUpvotes() + 1);
-            commentRepository.save(comment);
+
+            // Check if the user has already upvoted
+            if (!comment.getUpvotedUserIds().contains(userId)) {
+                // If the user had previously downvoted, remove the downvote
+                if (comment.getDownvotedUserIds().remove(userId)) {
+                    comment.setDownvotes(comment.getDownvotes() - 1);
+                }
+
+                // Add the upvote
+                comment.getUpvotedUserIds().add(userId);
+                comment.setUpvotes(comment.getUpvotes() + 1);
+
+                // Save the updated comment
+                commentRepository.save(comment);
+            }
         }
     }
 
     // Method to handle downvoting a comment
-    public void downvoteComment(String commentId) {
+    public void downvoteComment(String userId, String commentId) {
         Optional<Comment> commentOpt = commentRepository.findById(commentId);
 
         if (commentOpt.isPresent()) {
             Comment comment = commentOpt.get();
-            comment.setDownvotes(comment.getDownvotes() + 1);
-            commentRepository.save(comment);
+
+            // Check if the user has already downvoted
+            if (!comment.getDownvotedUserIds().contains(userId)) {
+                // If the user had previously upvoted, remove the upvote
+                if (comment.getUpvotedUserIds().remove(userId)) {
+                    comment.setUpvotes(comment.getUpvotes() - 1);
+                }
+
+                // Add the downvote
+                comment.getDownvotedUserIds().add(userId);
+                comment.setDownvotes(comment.getDownvotes() + 1);
+
+                // Save the updated comment
+                commentRepository.save(comment);
+            }
         }
     }
 }

@@ -4,7 +4,9 @@ import lombok.Data;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Data
 @Document(collection = "comments")
@@ -14,7 +16,7 @@ public class Comment {
     private String id;
     private String postId;
     private String userId;
-    private String username; // New field to store the username
+    private String username;
     private String content;
     private LocalDateTime createdAt;
     private int upvotes;
@@ -23,6 +25,11 @@ public class Comment {
     private String parentCommentId;
     private List<Comment> replies;
 
+    // New fields to track user votes
+    private Set<String> upvotedUserIds = new HashSet<>();
+    private Set<String> downvotedUserIds = new HashSet<>();
+
+    // Constructor
     public Comment(String postId, String userId, String content, String parentCommentId) {
         this.postId = postId;
         this.userId = userId;
