@@ -45,30 +45,44 @@ public class CommentService {
         // Fetch all comments for the given post in a single query
         List<Comment> allComments = commentRepository.findByPostId(postId);
 
-        // Map for easy lookup of comments by ID
+        // Create a map to easily find comments by their ID
         Map<String, Comment> commentMap = new HashMap<>();
         List<Comment> topLevelComments = new ArrayList<>();
 
         // Populate the map and identify top-level comments
-        allComments.forEach(comment -> {
+        for (Comment comment : allComments) {
             commentMap.put(comment.getId(), comment);
             if (comment.getParentCommentId() == null) {
                 topLevelComments.add(comment);
             }
-        });
+        }
 
-        // Organize replies under their respective parent comments
-        allComments.forEach(comment -> {
+        // Organize all replies recursively
+        for (Comment comment : allComments) {
             if (comment.getParentCommentId() != null) {
                 Comment parentComment = commentMap.get(comment.getParentCommentId());
                 if (parentComment != null) {
                     parentComment.getReplies().add(comment);
                 }
             }
-        });
+        }
+
+        // Recursively build the entire comment tree
+        for (Comment topLevelComment : topLevelComments) {
+            buildCommentTree(topLevelComment, commentMap);
+        }
 
         return topLevelComments;
     }
+
+    private void buildCommentTree(Comment parentComment, Map<String, Comment> commentMap) {
+        List<Comment> replies = parentComment.getReplies();
+        for (Comment reply : replies) {
+            // Recursively build the tree for each reply
+            buildCommentTree(reply, commentMap);
+        }
+    }
+
 
     public List<Comment> getRepliesForComment(String commentId) {
         return commentRepository.findByParentCommentId(commentId);
