@@ -64,4 +64,27 @@ public class CommentService {
         // Delete the comment by ID
         commentRepository.deleteById(commentId);
     }
+
+
+    // Method to handle upvoting a comment
+    public void upvoteComment(String commentId) {
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+
+        if (commentOpt.isPresent()) {
+            Comment comment = commentOpt.get();
+            comment.setUpvotes(comment.getUpvotes() + 1);
+            commentRepository.save(comment);
+        }
+    }
+
+    // Method to handle downvoting a comment
+    public void downvoteComment(String commentId) {
+        Optional<Comment> commentOpt = commentRepository.findById(commentId);
+
+        if (commentOpt.isPresent()) {
+            Comment comment = commentOpt.get();
+            comment.setDownvotes(comment.getDownvotes() + 1);
+            commentRepository.save(comment);
+        }
+    }
 }

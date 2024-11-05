@@ -47,4 +47,19 @@ public class CommentController {
         commentService.deleteComment(commentId);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+
+    // Endpoint to upvote a comment
+    @PostMapping("/{commentId}/upvote")
+    public ResponseEntity<Void> upvoteComment(@PathVariable String commentId) {
+        commentService.upvoteComment(commentId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    // Endpoint to downvote a comment
+    @PostMapping("/{commentId}/downvote")
+    public ResponseEntity<Void> downvoteComment(@PathVariable String commentId) {
+        commentService.downvoteComment(commentId);
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }
